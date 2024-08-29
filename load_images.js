@@ -1,3 +1,4 @@
+//Loading everything needed for making the card
 
 let RedMana;
 let RedManaGem;
@@ -43,6 +44,7 @@ let CurseAttackBackground;
 
 let ImageUpgrade;
 
+//Green Glow of the Gem when upgraded
 let ManaGemUpgrade = [];
 
 function ImagePreload()
@@ -144,14 +146,19 @@ function ImageResize()
 	for (i = 0; i < 5; i++)
 	{	
 		ManaUpgrade = ManaGemUpgrade[i];
-		ManaUpgrade.loadPixels();
-		for(j = 0; j < ManaUpgrade.pixels.length; j += 4)
+		//ManaUpgrade.getContext("2d", { willReadFrequently: true })
+		//ManaUpgrade.loadPixels();
+		/*for(j = 0; j < ManaUpgrade.pixels.length; j += 4)
 		{
 			ManaUpgrade.pixels[j] = 0;
 			ManaUpgrade.pixels[j + 1] = 255;
 			ManaUpgrade.pixels[j + 2] = 0;
-		}
-		ManaUpgrade.updatePixels();
+		}*/
+
+		//ManaUpgrade.updatePixels();	
+		ManaUpgrade.filter(THRESHOLD, 10);
+		ManaUpgrade.filter(INVERT);
 		ManaUpgrade.resize(350,0);
+		ManaUpgrade.filter(BLUR, 4)
 	}
 }

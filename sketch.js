@@ -1,5 +1,9 @@
-let canvas;
-let cardCanvas;
+let Canvas;
+let CanvasCard;
+let CanvasGlow;
+let CanvasArt;
+let CanvasDownload;
+let CanvasDownloadWithBorder
 
 let numOfRows = 1;
 
@@ -14,6 +18,9 @@ let inputs = [];
 let rows = [];
 
 let CardArt;
+let CardWidth;
+let CardHeight;
+
 
 class Char {
 	constructor(char, colored) {
@@ -29,7 +36,6 @@ class Row {
 		this.len = 0;
 	}
 }
-
 
 
 let testString = "";
@@ -57,9 +63,9 @@ let CurrentType = "Attack";
 let fontKreon;
 let fontKreonBold;
 
-let OldCardMana;
-let OldCardBackground;
-let OldCardFrame;
+let CurrentCardMana;
+let CurrentCardBackground;
+let CurrentCardFrame;
 
 let Icons = [];
 
@@ -71,9 +77,9 @@ let IconEthereal;
 
 
 let CardMap;
-let CardColor;
-let CardRarity;
-let CardType;
+let CurrentCardColor;
+let CurrentCardRarity;
+let CurrentCardType;
 let CardManaIcon;
 
 
@@ -83,7 +89,9 @@ let infoPressed = false;
 let TextArea;
 let ArtZoom = 100;
 
+let CurrentCardBorder;
 
+let CurrentCard;
 
 function preload() {
 	//#region Cards
@@ -117,22 +125,27 @@ function preload() {
 	//#endregion
 
 	ButtonPreLoad();
+	BoardPreload();
 }
 
+
 function setup() {
+
+	//Canvas Initializartion
+
 	pixelDensity(3.0);
-	canvas = createCanvas(800, 550);
-	cardCanvas = createGraphics(350, 455);
-
-	imageCanvas = createGraphics(265, 200);
-
-	downloadCanvas = createGraphics(350, 455);
-
-	let context = canvas.elt.getContext("2d");
-	context.miterLimit = 3;
-	let pgContext = cardCanvas.elt.getContext("2d");
-	pgContext.miterLimit = 3;
-	clear();
+	//Main Canvas
+	Canvas = createCanvas(900, 650);
+	//Card 
+	CanvasCard = createGraphics(350, 455);
+	//Image / Art
+	CanvasArt = createGraphics(265, 200);
+	//Colored Border, for Board Game
+	CanvasGlow = createGraphics(380, 510);
+	//Download only the main card
+	CanvasDownload = createGraphics(350, 455);
+	//Download card with Border, for the Board Game
+	CanvasDownloadWithBorder = createGraphics(380, 510);
 
 	//#region Images Resize
 	ImageResize();
@@ -151,19 +164,20 @@ function setup() {
 	{
 		IconDice[i].resize(28,28);
 	}
+
 	//#endregion
 
+	CurrentCard = new Card(Color.Red, Type.Attack, Rarity.Starter, "");
 
-
-	OldCardBackground = RedAttackBackground;
-	OldCardFrame = CommonAttackFrame;
-	OldCardMana = RedMana;
+	CurrentCardBackground = RedAttackBackground;
+	CurrentCardFrame = CommonAttackFrame;
+	CurrentCardMana = RedMana;
 	CurrentManaColor = Color.Red;
 
 	TextArea = createElement("textarea");
 	TextArea.attribute("rows", 5);
 	TextArea.attribute("cols", 42);
-	TextArea.position(415, 42);
+	TextArea.position(465, 42);
 	TextArea.input(call);
 
 	TextArea.elt.value = "Card >Text< @";
@@ -173,20 +187,20 @@ function setup() {
 	}
 
 	AddArt = createFileInput(addArt);
-	AddArt.position(410, 450);
+	AddArt.position(500, 450);
 
 	ArtXPosition = createSlider(-175, 175, 0);
-	ArtXPosition.position(450 + 5, 420);
+	ArtXPosition.position(500 + 5, 420);
 	ArtXPosition.style("width", "200px");
 	//ArtXPosition.input(frameUpdate);
 
 	ArtYPosition = createSlider(-100, 100, 0);
-	ArtYPosition.position(450 + 5, 458);
+	ArtYPosition.position(500 + 5, 458);
 	ArtYPosition.style("width", "200px");
 	//ArtYPosition.input(frameUpdate);
 
 	SliderZoom = createSlider(10, 200, 100);
-	SliderZoom.position(450 + 5, 496);
+	SliderZoom.position(500 + 5, 496);
 	SliderZoom.style("width", "200px");
 	//SliderZoom.input(frameUpdate);
 
@@ -207,24 +221,29 @@ function setup() {
 	NameInput.input(frameUpdate);
 
 	InputType = createInput("Attack");
-	InputType.position(573, 222 + 50 + 30);
+	InputType.position(623, 222 + 50 + 30);
 	InputType.changed(frameUpdate);
 
-	statusCheckbox = createCheckbox("Energy", true);
-	statusCheckbox.position(520, 160);
-	statusCheckbox.hide();
-	statusCheckbox.changed(frameUpdate);
+	/*URLInput = createInput();
+	URLInput.position(520, 522);
+	URLInput.attribute("placeholder", "Insert URL to image");
+	URLInput.size(250);*/
 
 	CreateCardMap();
 
 	//for the call() at the end of setup():
 
 	textFont(fontKreon);
-	cardCanvas.textFont(fontKreon);
+	CanvasCard.textFont(fontKreon);
 	textSize(26);
-	cardCanvas.textSize(26);
+	CanvasCard.textSize(26);
+
+	CurrentCard.Color = Color.Red;
+	CurrentCard.Type = Type.Attack;
+	CurrentCard.Rarity = Rarity.Starter;
 
 	ButtonSetup();
+	BoardSetup();
 
 	call();
 
@@ -289,27 +308,33 @@ function CreateCardMap() {
 }
 
 let CurrentManaColor;
-
 //#region  DRAW
 function draw() {
 	clear();
 	background(45, 62, 72);
 	fill(255);
-	rect(69,140,265,200);
-	if (EnergyUpgradeToggleButton.state && EnergyToggleButton.state)
-	{
-		image(ManaGemUpgrade[CurrentManaColor], 48 - 6, 4, (OldCardMana.width * .9) + 10,(OldCardMana.height * .9) + 10);
-	}
-	image(OldCardMana, 48 - 1, 10 - 2, OldCardMana.width * .8,OldCardMana.height * .8);
-
+	tint(0,255,0);
+	if (ButtonToggleUpgradeEnergy.state && ButtonToggleEnergy.state)
+		{
+			image(ManaGemUpgrade[CurrentManaColor],
+				42,
+				4,
+				(CurrentCardMana.width * .9),
+				(CurrentCardMana.height * .9))
+				;
+		}
+	tint(255);
+	image(CurrentCardMana, 48 - 1, 10 - 2, CurrentCardMana.width * .8,CurrentCardMana.height * .8);
 	ButtonDraw();
+
+	fill(0);
 
 
 	fill(255);
 	stroke(52, 41, 41);
 	strokeWeight(1);
 	text("Text:", 420, 24);
-	if (NameUpgradeToggleButton.state)
+	if (ButtonToggleUpgradeCard.state)
 		{
 			fill(133, 214, 40);
 			text("Name+:", 200, 32)
@@ -322,110 +347,44 @@ function draw() {
 	fill(225, 195, 108);
 	text(">Y<", 530, 24);
 	noStroke();
-
+	
 	ImageDraw();
+	fill(255);
+	if (CardArt == null)
+	{
+		text("Load image from device:", 480, 430)
+		//text("Load image from URL:", 480, 490)
+	}
 
-	image(imageCanvas, 69, 120 + 20);
-	image(cardCanvas, 20, 60 + 20);
+	//rect(20, 80, 390, 530)
+	if (ButtonToggleShowBorder.state)
+	{
+		image(CurrentCardBorder, 0 + 20, 0 + 80);
+		if (CurrentCard.IsGlowing)
+			{
+				image(CanvasGlow, 0 + 18, 0 + 80);
+			}
+	}
+	//image(BoardRed[3], 15, 80);
 
 
+
+	image(CanvasArt, 65 + 15, 80 + 80);
+	image(CanvasCard, 15 + 18, 20 + 80);
 }
 
 //#endregion
 
-function resetArt() {
-	ImageCenterX();
-	ImageCenterY();
-	ImageCenterZoom();
-
-	frameUpdate();
-}
-
-
-
-function ImageCenterX(){
-	ArtXPosition.value(0);
-}
-
-function ImageCenterY(){
-	ArtYPosition.value(0);
-
-}
-function ImageCenterZoom(){
-	SliderZoom.value(100);
-
-}
-
-function ImageDraw() {
-
-	if (DragImage)
-	{
-		let DeltaX = mouseX - DragInitialX;
-		let DeltaY = mouseY - DragInitialY;
-
-		print(DeltaX);
-		print(DeltaY);
-		ArtXPosition.value(DragInitialImageX + DeltaX);
-		ArtYPosition.value(DragInitialImageY + DeltaY);
-	}
-
-	imageCanvas.imageMode(CENTER);
-
-	if (CardArt != null) {
-		imageCanvas.clear();
-		imageCanvas.image(CardArt,			
-			ArtXPosition.value() + 265 / 2,
-			ArtYPosition.value() + 100,
-			265 * (SliderZoom.value() / 100),
-			200 * (SliderZoom.value() / 100)
-		);
-	}
-
-	if (ImageFocus)
-	{
-		CurrentKeyWait -= deltaTime / 1000;
-		if (CurrentKeyWait < 0)
-		{
-			if (keyIsDown(LEFT_ARROW)){
-				ArtXPosition.value(ArtXPosition.value() - 2);
-			}
-			else if (keyIsDown(RIGHT_ARROW)){
-				ArtXPosition.value(ArtXPosition.value() + 2);
-			}
-			else if (keyIsDown(UP_ARROW)){
-				ArtYPosition.value(ArtYPosition.value() - 2);
-			}
-			else if (keyIsDown(DOWN_ARROW)){
-				ArtYPosition.value(ArtYPosition.value() + 2);
-			}	
-		}
-	}
-
-	imageMode(CORNER);
-}
-
-
 function frameUpdate() {
 
-	noLoop();
-	cardCanvas.clear();
+	CanvasCard.clear();
+	//cardCanvas.background(0);
 
 
 	noStroke();
 	fill(255);
 
 	/*stroke(0);
-
-	if (questionPressed === true) {
-		noFill();
-		strokeWeight(4);
-		circle(750, 30, 25);
-
-		line(750, 45, 700, 185);
-		rect(425, 185, 350, 122, 20);
-
-		image(HelpImage, 450, 200);
-	}
 	if (infoPressed === true) {
 		noFill();
 		strokeWeight(4);
@@ -448,40 +407,60 @@ function frameUpdate() {
 	fill(0);
 	noStroke();
 	textFont(fontKreon);
-	cardCanvas.textFont(fontKreon);
+	CanvasCard.textFont(fontKreon);
 	textSize(23);
-	//text("Energy:", 10, 35);
-	//text("Name:", 200, 37);
 
-	//image(CardBackground, 20, 80);
-	cardCanvas.image(OldCardBackground, 0, 0);
-	//image(CardFrame, 20, 80);
-	cardCanvas.image(OldCardFrame, 0, 0);
+	CanvasCard.image(CurrentCardBackground, 0, 0);
+	CanvasCard.image(CurrentCardFrame, 0, 0);
 
 
-	if (EnergyToggleButton.state) {
-		cardCanvas.image(OldCardMana, -5, 0);
+	if (ButtonToggleEnergy.state) {
+		CanvasCard.image(CurrentCardMana, 0-5
+		, 0);
 	}
 
-	//fill(91, 91, 91);
-	cardCanvas.fill(91, 91, 91);
-	//textSize(17);
-	cardCanvas.textSize(17);
-	//textFont(fontKreonBold);
-	cardCanvas.textFont(fontKreonBold);
-	//stroke(91, 91, 91);
-	cardCanvas.stroke(91, 91, 91);
-	//strokeWeight(0.4);
-	cardCanvas.strokeWeight(0.4);
 
-	cardCanvas.textAlign(CENTER);
-	cardCanvas.text(InputType.value(), 180, 262)
-	cardCanvas.textAlign(LEFT);
+
+	UpdateName();
+	UpdateEnergy();
+
+
+	UpdateText();
+
+	//image(UIExportButtonImage, 690, 500);
+	//image(cardCanvas, 20, 80);
+	//loop();
+}
+
+function UpdateGlow() {
+
+	CanvasGlow.clear();
+	CanvasGlow.image(CanvasCard, 15, 20);
+	CanvasGlow.filter(THRESHOLD, 10);
+	CanvasGlow.filter(INVERT);
+	CanvasGlow.filter(BLUR, 8);
+}
+
+function UpdateName() {
+	//fill(91, 91, 91);
+	CanvasCard.fill(91, 91, 91);
+	//textSize(17);
+	CanvasCard.textSize(17);
+	//textFont(fontKreonBold);
+	CanvasCard.textFont(fontKreonBold);
+	//stroke(91, 91, 91);
+	CanvasCard.stroke(91, 91, 91);
+	//strokeWeight(0.4);
+	CanvasCard.strokeWeight(0.4);
+
+	CanvasCard.textAlign(CENTER);
+	CanvasCard.text(InputType.value(), 180, 262)
+	CanvasCard.textAlign(LEFT);
 
 	textSize(24);
 	noStroke();
 	Name = split(NameInput.value(), "");
-	if (NameUpgradeToggleButton.state) {
+	if (ButtonToggleUpgradeCard.state) {
 		append(Name, "+");
 	}
 	let NameLength = 0;
@@ -492,55 +471,53 @@ function frameUpdate() {
 	let coeff = 0;
 
 	//fill(95, 94, 92);
-	cardCanvas.fill(95, 94, 92);
+	CanvasCard.fill(95, 94, 92);
 	for (d = 0; d < Name.length; d++) {
-		//textSize(24);
-		cardCanvas.textSize(24);
-		//stroke(0, 0, 0, 60);
-		cardCanvas.stroke(0, 0, 0, 60);
-		//strokeWeight(4);
-		cardCanvas.strokeWeight(4);
-		//text(Name[d], 202-NameLength/2+coeff, 149);
-		cardCanvas.text(Name[d], 182 - NameLength / 2 + coeff, 69);
+
+		CanvasCard.textSize(24);
+		CanvasCard.stroke(0, 0, 0, 60);
+		CanvasCard.strokeWeight(4);
+		CanvasCard.text(Name[d], 182 - NameLength / 2 + coeff, 68);
 
 		coeff = coeff + textWidth(Name[d]) + 2;
 	}
 
 	coeff = 0;
-	if (NameUpgradeToggleButton.state) {
-		//fill(133,214,40);
-		cardCanvas.fill(133, 214, 40);
+	if (ButtonToggleUpgradeCard.state) {
+		CanvasCard.fill(133, 214, 40);
 	} else {
-		//fill(252,248,234);
-		cardCanvas.fill(252, 248, 234);
+		CanvasCard.fill(252, 248, 234);
 	}
-	//stroke(91,86,81);
-	cardCanvas.stroke(91, 86, 81);
-	//strokeWeight(4);
-	cardCanvas.strokeWeight(4);
-	//textSize(24);
-	cardCanvas.textSize(24);
+
+
+	CanvasCard.stroke(91, 86, 81);
+	CanvasCard.strokeWeight(4);
+	CanvasCard.textSize(24);
 	for (d = 0; d < Name.length; d++) {
 		//text(Name[d], 199-NameLength/2+coeff, 146);
-		cardCanvas.text(Name[d], 179 - NameLength / 2 + coeff, 66);
+		CanvasCard.text(Name[d], 179 - NameLength / 2 + coeff,65);
 		coeff = coeff + textWidth(Name[d]) + 2;
 	}
+}
+
+function UpdateEnergy() {
 
 	Energy = EnergyInput.value();
+
 	if (Energy != "") {
-		if (EnergyToggleButton.state) {
-			if (EnergyUpgradeToggleButton.state) {
+		if (ButtonToggleEnergy.state) {
+			if (ButtonToggleUpgradeEnergy.state) {
 				//fill(133,214,40);
-				cardCanvas.fill(133, 214, 40);
+				CanvasCard.fill(133, 214, 40);
 			} else {
 				//fill(249,242,230);
-				cardCanvas.fill(249, 242, 230);
+				CanvasCard.fill(249, 242, 230);
 			}
 
-			cardCanvas.strokeWeight(8);
-			cardCanvas.textFont(fontKreonBold);
-			cardCanvas.textSize(40);
-			cardCanvas.strokeJoin(BEVEL);
+			CanvasCard.strokeWeight(8);
+			CanvasCard.textFont(fontKreonBold);
+			CanvasCard.textSize(40);
+			CanvasCard.strokeJoin(BEVEL);
 
 			EnergyX = 0;
 			EnergyY = 0;
@@ -570,19 +547,61 @@ function frameUpdate() {
 
 
 			//ENERGY NUMBER
-			cardCanvas.stroke(100, 165);
-			cardCanvas.text(Energy, 29.5 - EnergyX , 51.5 - EnergyY + 5);
-			cardCanvas.stroke(75, 71, 58);
-			cardCanvas.text(Energy, 28 - EnergyX, 50 - EnergyY + 5);
+			CanvasCard.stroke(100, 165);
+			CanvasCard.text(Energy, 29.5 - EnergyX , 51.5 - EnergyY + 5);
+			CanvasCard.stroke(75, 71, 58);
+			CanvasCard.text(Energy, 28 - EnergyX, 50 - EnergyY + 5);
+		}
+	}
+	UpdateGlow();
+}
+
+function UpdateBorder() {
+
+	if (CurrentCard.Color == Color.Curse )
+	{
+		CurrentCardBorder = ColorBorder[Color.Colorless];
+	}
+	else if (CurrentCard.IsUpgraded)
+	{
+		CurrentCardBorder = ColorBorder[CurrentCard.Color];
+	}
+	else
+	{
+		CurrentCardBorder = RarityBorder[CurrentCard.Rarity]
+		if (CurrentCard.Color == Color.Colorless)
+		{
+			CurrentCardBorder = RarityBorder[Rarity.Uncommon];
 		}
 	}
 
+	if (CurrentCard.Color == Color.Curse || CurrentCard.Color == Color.Status)
+	{
+		CurrentCard.IsGlowing = false;
+		ButtonToggleGlow.state = false;
+	}
+	else if (CurrentCard.IsUpgraded || (CurrentCard.Rarity == Rarity.Rare && CurrentCard.Color != Color.Colorless))
+	{
+		CurrentCard.IsGlowing = true;
+		ButtonToggleGlow.state = true;
+	}
+	else
+	{
+		CurrentCard.IsGlowing = false;
+		ButtonToggleGlow.state = false;
+	}
+
+	UpdateGlow();
+	frameUpdate();
+}
+
+function UpdateText() {
 	//noStroke();
-	cardCanvas.noStroke();
+	CanvasCard.noStroke();
 	//textFont(fontKreon);
-	cardCanvas.textFont(fontKreon);
+	CanvasCard.textFont(fontKreon);
 	//textSize(25);
-	cardCanvas.textSize(25);
+	CanvasCard.textSize(25);
 	for (let z = 0; z < numOfRows; z++) {
 
 
@@ -595,29 +614,28 @@ function frameUpdate() {
 				if (rows[z].chars[k].colored == 8)
 					{
 						//Gold Number;
+						CanvasCard.stroke(52, 41, 41);
+						CanvasCard.strokeWeight(1);
 
-						cardCanvas.stroke(52, 41, 41);
-						cardCanvas.strokeWeight(1);
-
-						cardCanvas.textSize(20);
-						cardCanvas.textAlign(CENTER);
-						cardCanvas.fill(52, 41, 41);
-						cardCanvas.text(
+						CanvasCard.textSize(20);
+						CanvasCard.textAlign(CENTER);
+						CanvasCard.fill(52, 41, 41);
+						CanvasCard.text(
 							rows[z].chars[k].char,
 							(180.9 - 4 - rows[z].len / 2 + coeff) - 1,
-							(347.6 - 13.5 * (numOfRows - 1) + z * 28) - 3
+							(347.6 - 13.5 * (numOfRows - 1) + z * 28) - 3+2
 						);		
-						cardCanvas.textAlign(LEFT);
-						cardCanvas.textSize(25);			
+						CanvasCard.textAlign(LEFT);
+						CanvasCard.textSize(25);			
 						continue;
 					};
 
 				if (CurrChar == "@") {
 					//image(CardMap.get(CardColor.value()+"ManaGem"), 197.6-rows[z].len/2+coeff, 404-13.5*(numOfRows-1)+z*28);
-					cardCanvas.image(
-						CardMap.get(ColorString[CardColor] + "ManaGem"),
+					CanvasCard.image(
+						CardMap.get(ColorString[CurrentCard.Color] + "ManaGem"),
 						177.6 - rows[z].len / 2 + coeff,
-						324 - 13.5 * (numOfRows - 1) + z * 28
+						324 - 13.5 * (numOfRows - 1) + z * 28+2
 					);
 				} else if (rows[z].chars[k].colored == 9) {
 
@@ -637,7 +655,6 @@ function frameUpdate() {
 							if (parseInt(rows[z].chars[k + 1].char) != NaN)
 							{
 								
-								print(parseInt(rows[z].chars[k + 1].char))
 								rows[z].chars[k + 1].colored = 8;
 
 							}
@@ -658,343 +675,54 @@ function frameUpdate() {
 						}
 					}
 					
-					cardCanvas.image(
+					CanvasCard.image(
 						CurrentIcon,
 						177.6 - rows[z].len / 2 + coeff,
-						324 - 13.5 * (numOfRows - 1) + z * 28
+						324 - 13.5 * (numOfRows - 1) + z * 28+2
 					);
 				} else {
 					//stroke(52, 41, 41);
-					cardCanvas.stroke(52, 41, 41);
+					CanvasCard.stroke(52, 41, 41);
 					//strokeWeight(1);
-					cardCanvas.strokeWeight(1);
+					CanvasCard.strokeWeight(1);
 					//fill(52, 41, 41);
-					cardCanvas.fill(52, 41, 41);
+					CanvasCard.fill(52, 41, 41);
 					//Shadow
-					cardCanvas.text(
+					CanvasCard.text(
 						rows[z].chars[k].char,
 						183.2 - 4 - rows[z].len / 2 + coeff,
-						349.3 - 13.5 * (numOfRows - 1) + z * 28
+						349.3 - 13.5 * (numOfRows - 1) + z * 28+2
 					);
 					if (rows[z].chars[k].colored === 1) {
 						fill(225, 195, 108);
-						cardCanvas.fill(225, 195, 108);
+						CanvasCard.fill(225, 195, 108);
 					} else if (rows[z].chars[k].colored === 2) {
 						fill(133, 214, 40);
-						cardCanvas.fill(133, 214, 40);
+						CanvasCard.fill(133, 214, 40);
 					} else {
 						fill(249, 242, 230);
-						cardCanvas.fill(249, 242, 230);
+						CanvasCard.fill(249, 242, 230);
 					}
 					//noStroke();
-					cardCanvas.noStroke();
+					CanvasCard.noStroke();
 					//Left I Think
-					cardCanvas.text(
+					CanvasCard.text(
 						rows[z].chars[k].char,
 						180.9 - 4 - rows[z].len / 2 + coeff,
-						347.6 - 13.5 * (numOfRows - 1) + z * 28
+						347.6 - 13.5 * (numOfRows - 1) + z * 28+2
 					);
 					//I don't know
-					cardCanvas.text(
+					CanvasCard.text(
 						rows[z].chars[k].char,
 						181.2 - 4 - rows[z].len / 2 + coeff,
-						347.8 - 13.5 * (numOfRows - 1) + z * 28
+						347.8 - 13.5 * (numOfRows - 1) + z * 28 +2
 					);
 				}
 				coeff = coeff + textWidth(rows[z].chars[k].char) + 0.2;
 			}
 		}
 	}
-
-	//image(UIExportButtonImage, 690, 500);
-	//image(cardCanvas, 20, 80);
-	loop();
 }
-
-//#region BUTTONS
-let Buttons = [];
-
-let UIExportButtonImage;
-let UIRemoveButtonImage;
-let UIRemoveResetImage;
-
-let ButtonExport;
-let ButtonRemove;
-let ButtonResetImage;
-
-let UIColorImage = [];
-let UITypeImage = [];
-let UIRarityImage = [];
-
-let ColorButtons = [];
-let TypeButtons = [];
-let RarityButtons = [];
-
-let UICheckTrue;
-let UICheckFalse;
-
-let EnergyToggleButton;
-
-let UICenterX;
-let UICenterY;
-let UICenterZoom;
-
-let ButtonCenterX;
-let ButtonCenterY;
-let ButtonCenterZoom;
-
-let UIIcon = [];
-let IconButtons = [];
-
-let UIKeyword = [];
-let KeywordButton = [];
-
-let NameUpgradeToggleButton;
-let EnergyUpgradeToggleButton;
-
-function ButtonPreLoad() {
-	UIExportButtonImage = loadImage("ui/Download.png");
-	UIRemoveButtonImage = loadImage("ui/RemoveArt.png");
-	UIRemoveResetImage = loadImage("ui/reset.png");
-
-	for(i = 0; i < Color.Last; i++){
-		UIColorImage[i] = loadImage("ui/" + ColorString[i] + "Button.png");
-	}
-
-	for (i = 0; i < Type.Last; i++)
-		UITypeImage[i] = loadImage("ui/" + TypeString[i] + "Button.png");
-
-	for (i = 0; i < Rarity.Last; i++)
-		UIRarityImage[i] = loadImage("ui/" + RarityString[i] + "Button.png");
-
-	for(i = 0;  i < Icon.Last; i++)
-	{	
-		UIIcon[i] = loadImage("icon/" + IconString[i] + "Button.png");
-	}
-
-	for(i = 0;  i < Keyword.Last; i++)
-	{	
-		UIKeyword[i] = loadImage("keyword/" + KeywordString[i] + "Button.png");
-	}
-
-	UICheckTrue = loadImage("ui/TickboxTrue.png");
-	UICheckFalse = loadImage("ui/TickboxFalse.png");
-
-	UICenterX = loadImage("ui/CenterX.png");
-	UICenterY = loadImage("ui/CenterY.png");
-	UICenterZoom = loadImage("ui/CenterZoom.png");
-	
-}
-
-function ButtonSetup() {
-
-	for( i = 0; i < Color.Last; i++){
-		UIColorImage[i].resize(48, 48);
-		let Button = new StandardButton(400 + i * 50, 230, UIColorImage[i], ChangeColor, i);
-		ColorButtons.push(Button);
-		Buttons.push(Button);
-	}
-
-	for( i = 0; i < Type.Last; i++){
-		UITypeImage[i].resize(48, 48);
-		let Button = new StandardButton(400 + i * 50, 280, UITypeImage[i], ChangeType, i);
-		TypeButtons.push(Button);
-		Buttons.push(Button);
-
-	}
-
-	for( i = 0; i < Rarity.Last; i++){
-		UIRarityImage[i].resize(48, 48);
-		let Button = new StandardButton(400 + i * 50, 330, UIRarityImage[i], ChangeRarity, i);
-		RarityButtons.push(Button);
-		Buttons.push(Button);
-	}
-	
-	for( i = 0; i < Icon.Last; i++){
-		UIIcon[i].resize(32, 32);
-		let Button = new StandardButton(410 + (i % 10) * 32, 125 + Math.floor(i / 10) * 32, UIIcon[i], AddIcon, i);
-		IconButtons.push(Button);
-		Buttons.push(Button);
-	}
-
-	for( i = 0; i < Keyword.Last; i++){
-		UIKeyword[i].resize(32, 32);
-		let Button = new StandardButton(410 + i * 32, 125 + 64, UIKeyword[i], AddKeyword, i);
-		KeywordButton.push(Button);
-		Buttons.push(Button);
-	}
-
-	ColorButtons[Color.Red].enabled = false;
-	TypeButtons[Type.Attack].enabled = false;
-	RarityButtons[Rarity.Common].enabled = false; 
-
-	CardColor = Color.Red;
-	CardType = Type.Attack;
-	CardRarity = Rarity.Common;
-
-	UICheckFalse.resize(48,48);
-	UICheckTrue.resize(48,48);
-
-	EnergyToggleButton = new ToggleImageButton(8, 16, UICheckTrue, UICheckFalse, ToggleEnergy, true);
-	EnergyUpgradeToggleButton = new ToggleImageButton(110, 16, UICheckTrue, UICheckFalse, ToggleTicked, false);
-	EnergyUpgradeToggleButton.main_tint = [0,255,0];
-	EnergyUpgradeToggleButton.hover_tint = [64,192,64];
-	
-	NameUpgradeToggleButton = new ToggleImageButton(274, 0, UICheckTrue, UICheckFalse, ToggleTicked, false);
-	NameUpgradeToggleButton.main_tint = [0,255,0];
-	NameUpgradeToggleButton.hover_tint = [64,192,64];
-
-	Buttons.push(EnergyToggleButton);
-	Buttons.push(NameUpgradeToggleButton);
-	Buttons.push(EnergyUpgradeToggleButton);
-
-	UICenterX.resize(40,40);
-	UICenterY.resize(40,40);
-	UICenterZoom.resize(40,40);
-
-	UIExportButtonImage.resize(64, 64);
-	UIRemoveButtonImage.resize(48, 48);
-	UIRemoveResetImage.resize(48, 48);
-
-	ButtonCenterX = new StandardButton(400, 400, UICenterX, ImageCenterX);
-	ButtonCenterY = new StandardButton(400, 440, UICenterY, ImageCenterY);
-	ButtonCenterZoom = new StandardButton(400, 480, UICenterZoom, ImageCenterZoom);
-	ButtonExport = new StandardButton(710, 435 - 8, UIExportButtonImage, exportPng);
-	ButtonRemove = new StandardButton(655, 435, UIRemoveButtonImage, removeArt);
-	//ButtonResetImage = new StandardButton(660, 370, UIRemoveResetImage, resetArt);
-
-	Buttons.push(ButtonCenterX);
-	Buttons.push(ButtonCenterY);
-	Buttons.push(ButtonCenterZoom);
-	Buttons.push(ButtonExport);
-	Buttons.push(ButtonRemove);
-	//Buttons.push(ButtonResetImage);
-
-	ButtonCenterX.visible = false;
-	ButtonCenterY.visible = false;
-	ButtonCenterZoom.visible = false;
-	ButtonRemove.visible = false;
-	//ButtonResetImage.visible = false;
-}
-
-function AddIcon(IconToAdd)
-{
-	if (IconToAdd == Icon.Energy)
-	{
-		TextArea.elt.value += "@ ";
-	}
-	else if (IconToAdd == Icon.Gold)
-	{
-		TextArea.elt.value += " {" + IconCode[IconToAdd] + "1} ";
-	}
-	else
-	{
-		TextArea.elt.value += " {" + IconCode[IconToAdd] + "} ";
-	}
-
-	call();
-}
-
-function AddKeyword(KeywordToAdd)
-{
-	let tmpStr = ">" + KeywordString[KeywordToAdd] + "<";
-
-	TextArea.elt.value += tmpStr;
-	call();
-}
-
-function ButtonDraw() {
-	
-	//fill(220);
-	//rect(378, 0, width - 200, height);
-	//fill(0);
-
-	Buttons.forEach(Button => {
-		Button.Draw();
-	})
-
-
-}
-//#endregion
-
-function ToggleEnergy(NewState){
-
-	if (NewState)
-	{
-		EnergyInput.show()
-		EnergyUpgradeToggleButton.visible = true;
-	}
-	else{
-		EnergyInput.hide();
-		EnergyUpgradeToggleButton.visible = false;
-	}
-	ToggleTicked();
-}
-
-function ToggleTicked(NewState){
-	frameUpdate();
-}
-
-function ChangeColor(ColorToChange) {
-
-	ColorButtons[CardColor].enabled = true;
-
-	if (ColorToChange == Color.Curse || ColorToChange == Color.Status)
-	{
-
-		RarityButtons[CardRarity].enabled = true;
-		CardRarity = Rarity.Common;
-		RarityButtons[CardRarity].enabled = false;
-
-		TypeButtons[CardType].enabled = true;
-		CardType = Type.Skill;
-		TypeButtons[CardType].enabled = false;
-
-		InputType.value(ColorString[ColorToChange]);
-
-		if (CardColor != Color.Status && CardColor != Color.Curse)
-			InputType.value(TypeString[CardType]);
-
-		CardManaIcon = CardMap.get("ColorlessManaGem");
-		EnergyToggleButton.state = false;
-		EnergyInput.hide();
-		EnergyUpgradeToggleButton.visible = false;
-	}
-	else
-	{
-		InputType.value(TypeString[CardType]);
-		CardManaIcon = CardMap.get(ColorString[CardColor] + "ManaGem");
-		EnergyToggleButton.state = true;
-		EnergyInput.show();
-		EnergyUpgradeToggleButton.visible = true;
-	}
-
-	CardColor = ColorToChange;
-	ColorButtons[CardColor].enabled = false;
-	changeCardFrame();
-}
-
-function ChangeRarity(RarityToChange) {
-
-	RarityButtons[CardRarity].enabled = true;
-	CardRarity = RarityToChange;
-	RarityButtons[CardRarity].enabled = false;
-
-	changeCardFrame();
-}
-
-function ChangeType(TypeToChange) {
-
-	TypeButtons[CardType].enabled = true;
-	CardType = TypeToChange;
-	TypeButtons[CardType].enabled = false;
-
-	if (CardColor != Color.Status && CardColor != Color.Curse)
-		InputType.value(TypeString[CardType]);
-	
-	changeCardFrame();
-}
-
 
 function call() {
 	let allText = split(TextArea.elt.value, "\n");
@@ -1041,9 +769,302 @@ function call() {
 
 }
 
+//#region BUTTONS
+
+
+function AddIcon(IconToAdd)
+{
+	if (IconToAdd == Icon.Energy)
+	{
+		TextArea.elt.value += "@ ";
+	}
+	else if (IconToAdd == Icon.Gold)
+	{
+		TextArea.elt.value += " {" + IconCode[IconToAdd] + "1} ";
+	}
+	else
+	{
+		TextArea.elt.value += " {" + IconCode[IconToAdd] + "} ";
+	}
+
+	call();
+}
+
+function AddKeyword(KeywordToAdd)
+{
+	let tmpStr = ">" + KeywordString[KeywordToAdd] + "<";
+
+	TextArea.elt.value += tmpStr;
+	call();
+}
+
+function ButtonDraw() {
+
+	Buttons.forEach(Button => {
+		Button.Draw();
+	})
+}
+//#endregion
+
+
+
+//#region Buttons Fuction
+
+function ToggleEnergy(NewState){
+
+	if (NewState)
+	{
+		EnergyInput.show()
+		ButtonToggleUpgradeEnergy.visible = true;
+	}
+	else{
+		EnergyInput.hide();
+		ButtonToggleUpgradeEnergy.visible = false;
+	}
+	ToggleTicked();
+}
+
+function ToggleEnergyUpgrade(newState)
+{
+	UpdateBorder();
+	frameUpdate();	
+}
+
+function ToggleNameUpgrade (newState) {
+
+	CurrentCard.IsUpgraded = newState;
+	UpdateBorder();
+	frameUpdate();
+}
+
+function ToggleGlow(newState){
+	CurrentCard.IsGlowing = newState;
+	frameUpdate();
+}
+
+function ToggleBoardGameMode(newState)
+{
+	ButtonToggleGlow.visible = newState;
+	frameUpdate();
+}
+
+function ToggleTicked(NewState){
+	frameUpdate();
+}
+
+function ChangeColor(ColorToChange) {
+
+	ColorButtons[CurrentCard.Color].enabled = true;
+
+	if (ColorToChange == Color.Curse || ColorToChange == Color.Status)
+	{
+
+		RarityButtons[CurrentCard.Rarity].enabled = true;
+		RarityButtons[Rarity.Starter].enabled = false;
+		CurrentCard.Rarity = Rarity.Starter;
+
+		TypeButtons[CurrentCard.Type].enabled = true;
+		TypeButtons[Type.Skill].enabled = false;
+		CurrentCard.Type = Type.Skill;
+
+		InputType.value(ColorString[ColorToChange]);
+
+		CardManaIcon = CardMap.get("ColorlessManaGem");
+		ButtonToggleEnergy.state = false;
+		ButtonToggleUpgradeCard.state = false;
+		CurrentCard.IsUpgraded = false;
+		EnergyInput.hide();
+		ButtonToggleUpgradeEnergy.visible = false;
+	}
+	else
+	{
+		InputType.value(TypeString[CurrentCard.Type]);
+		CardManaIcon = CardMap.get(ColorString[CurrentCard.Color] + "ManaGem");
+		ButtonToggleEnergy.state = true;
+		EnergyInput.show();
+		ButtonToggleUpgradeEnergy.visible = true;
+	}
+
+	CurrentCard.Color = ColorToChange;
+	ColorButtons[CurrentCard.Color].enabled = false;
+
+	UpdateBorder();
+	changeCardFrame();
+
+}
+
+function ChangeRarity(RarityToChange) {
+
+	RarityButtons[CurrentCard.Rarity].enabled = true;
+	CurrentCard.Rarity = RarityToChange;
+	RarityButtons[CurrentCard.Rarity].enabled = false;
+
+
+	UpdateBorder();
+	changeCardFrame();
+}
+
+function ChangeType(TypeToChange) {
+
+	TypeButtons[CurrentCard.Type].enabled = true;
+	CurrentCard.Type = TypeToChange;
+	TypeButtons[CurrentCard.Type].enabled = false;
+
+
+	if (CurrentCard.Color != Color.Status && CurrentCard.Color != Color.Curse)
+		InputType.value(TypeString[CurrentCard.Type]);
+
+	UpdateBorder();
+	changeCardFrame();
+}
+//#endregion
+
+
+function changeCardFrame() {
+
+	//noLoop();
+
+	let ColorStr = ColorString[CurrentCard.Color];
+	let RarityStr = RarityString[CurrentCard.Rarity];
+	let TypeStr = TypeString[CurrentCard.Type];
+
+	if (CurrentCard.Color == Color.Status) {
+		CurrentCardMana = ColorlessMana;
+		CurrentManaColor = Color.Colorless;
+		CurrentCardBackground = ColorlessSkillBackground;
+		CurrentCardFrame = CardMap.get(RarityStr + "SkillFrame");
+		
+	} else if (CurrentCard.Color == Color.Curse) {
+		
+		CurrentCardMana = ColorlessMana;
+		CurrentManaColor = Color.Colorless;
+		CurrentCardBackground = CardMap.get(
+			ColorStr + TypeStr + "Background"
+		);
+		CurrentCardFrame = CardMap.get(RarityStr + TypeStr + "Frame");
+	
+	} else {
+		CurrentCardMana = CardMap.get(ColorStr + "Mana");
+		CurrentManaColor = CurrentCard.Color;
+		CurrentCardBackground = CardMap.get(
+			ColorStr + TypeStr + "Background"
+		);
+		CurrentCardFrame = CardMap.get(RarityStr + TypeStr + "Frame");
+	}
+
+	
+	frameUpdate();
+	UpdateGlow();
+}
+
+//#region ImageFunction
+function resetArt() {
+	ImageCenterX();
+	ImageCenterY();
+	ImageCenterZoom();
+
+	frameUpdate();
+}
+
+function ImageCenterX(){
+	ArtXPosition.value(0);
+}
+
+function ImageCenterY(){
+	ArtYPosition.value(0);
+
+}
+
+function ImageCenterZoom(){
+	SliderZoom.value(100);
+
+}
+
+function ImageDraw() {
+
+	if (DragImage)
+	{
+		let DeltaX = mouseX - DragInitialX;
+		let DeltaY = mouseY - DragInitialY;
+
+		ArtXPosition.value(DragInitialImageX + DeltaX);
+		ArtYPosition.value(DragInitialImageY + DeltaY);
+	}
+
+	CanvasArt.imageMode(CENTER);
+
+	if (CardArt != null) {
+		CanvasArt.clear();
+		CanvasArt.image(CardArt,			
+			ArtXPosition.value() + 265 / 2,
+			ArtYPosition.value() + 100,
+			265 * (SliderZoom.value() / 100),
+			((CardArt.height * 265 ) / CardArt.width) * (SliderZoom.value() / 100)
+		);
+	}
+
+	if (ImageFocus)
+	{
+		CurrentKeyWait -= deltaTime / 1000;
+		if (CurrentKeyWait < 0)
+		{
+			if (keyIsDown(LEFT_ARROW)){
+				ArtXPosition.value(ArtXPosition.value() - 2);
+			}
+			else if (keyIsDown(RIGHT_ARROW)){
+				ArtXPosition.value(ArtXPosition.value() + 2);
+			}
+			else if (keyIsDown(UP_ARROW)){
+				ArtYPosition.value(ArtYPosition.value() - 2);
+			}
+			else if (keyIsDown(DOWN_ARROW)){
+				ArtYPosition.value(ArtYPosition.value() + 2);
+			}	
+		}
+	}
+
+	imageMode(CORNER);
+}
+
+function updateArt(){
+
+	if (CardArt != null) {
+		CanvasDownload.image(
+			CanvasArt,			
+			65 - 15,
+			80 - 20
+		);
+	}
+
+}
+
+/*function LoadImageFromURL(){
+	MyURL = URLInput.value();
+	try {
+		url = new URL(MyURL);
+	} catch (_) {
+		print("URL not valid");
+		return false;  
+	}
+
+	if ()
+	
+	print(CardArt);
+	if (CardArt.width == 0 || CardArt.height == 0)
+	{
+		print("Image Not Valid");
+		CardArt = null;
+	}
+}*/
+
 function addArt(file) {
 	if (file.type == "image") {
 		CardArt = loadImage(file.data);
+
+		//CardArt.resize(265, 0);
+
+		//CardHeight = CardArt.height;
+
 		AddArt.hide();
 
 		ArtXPosition.show();
@@ -1060,16 +1081,16 @@ function addArt(file) {
 		ButtonCenterZoom.visible = true;
 
 		
-		imageCanvas.clear();
+		CanvasArt.clear();
 	} else {
 		CardArt = null;
 	}
-
 	setTimeout(frameUpdate, 100);
 }
 
 function removeArt() {
 	CardArt = null;
+	AddArt.value(null);
 	AddArt.show();
 
 	ArtXPosition.hide();
@@ -1085,74 +1106,51 @@ function removeArt() {
 	ButtonCenterY.visible = false;
 	ButtonCenterZoom.visible = false;
 
-	imageCanvas.clear();
+	CanvasArt.clear();
 
 	resetArt();
 }
-
-function changeCardFrame() {
-
-	noLoop();
-
-	let ColorStr = ColorString[CardColor];
-	let RarityStr = RarityString[CardRarity];
-	let TypeStr = TypeString[CardType];
-
-	if (CardColor == Color.Status) {
-		OldCardMana = ColorlessMana;
-		CurrentManaColor = Color.Colorless;
-		OldCardBackground = ColorlessSkillBackground;
-		OldCardFrame = CardMap.get(RarityStr + "SkillFrame");
-		
-	} else if (CardColor == Color.Curse) {
-		
-		OldCardMana = ColorlessMana;
-		CurrentManaColor = Color.Colorless;
-		OldCardBackground = CardMap.get(
-			ColorStr + TypeStr + "Background"
-		);
-		OldCardFrame = CardMap.get(RarityStr + TypeStr + "Frame");
-	
-	} else {
-		OldCardMana = CardMap.get(ColorStr + "Mana");
-		CurrentManaColor = CardColor;
-		OldCardBackground = CardMap.get(
-			ColorStr + TypeStr + "Background"
-		);
-		OldCardFrame = CardMap.get(RarityStr + TypeStr + "Frame");
-	}
+//#endregion
 
 
-	frameUpdate();
-}
-
-function updateArt(){
-
-	if (CardArt != null) {
-		downloadCanvas.image(
-			CardArt,			
-			ArtXPosition.value() + 69 - 20,
-			ArtYPosition.value() + 140 - 80,
-			265 * (SliderZoom.value() / 100),
-			200 * (SliderZoom.value() / 100)
-		);
-	}
-
-}
-
-function exportPng() {
+function DownloadPng() {
 	//let imagePng = canvas.get(20, 80, 350, 455);
 	//imagePng.save(NameInput.value(), 'png');
 
+	CanvasDownload.clear()
+	CanvasDownloadWithBorder.clear();
 	//imagePng = null;
 	let downloadName = NameInput.value();
-	downloadName = downloadName + (NameUpgradeToggleButton.state ? " plus" : "");
-
-	downloadCanvas.clear()
-
+	downloadName = downloadName + (ButtonToggleUpgradeCard.state ? " plus" : "");
+	
 	updateArt();
-	downloadCanvas.image(cardCanvas, 0, 0);
-	downloadCanvas.save(downloadName + ".png");
+
+	if (ButtonToggleShowBorder.state)
+	{
+		CanvasDownloadWithBorder.image(CurrentCardBorder, 0, 0);
+		if (CurrentCard.IsGlowing)
+			{
+				CanvasDownloadWithBorder.image(CanvasGlow, -2 , 0);
+			}
+		if (CardArt != null) {
+			CanvasDownloadWithBorder.image(
+				CanvasArt,			
+				60 - 2,
+				80,
+			);
+		}
+
+	
+	
+		CanvasDownloadWithBorder.image(CanvasCard, 15 - 2, 20);
+		CanvasDownloadWithBorder.save(downloadName + ".png");
+
+	}
+	else
+	{
+		CanvasDownload.image(CanvasCard, 0, 0);
+		CanvasDownload.save(downloadName + ".png");
+	}
 }
 
 let DragImage = false;
@@ -1229,7 +1227,6 @@ function keyPressed() {
 
 function mouseWheel(event){
 	if (mouseX >= 69 && mouseX <= 69 + 265 && mouseY >= 140 && mouseY <= 140 + 200){
-		print(event.delta);
 		SliderZoom.value(SliderZoom.value() + event.delta / -20);
 	}
 }

@@ -104,3 +104,29 @@ const KeywordString = [
     "Retain"
 ]
 
+class Card {
+    constructor(inColor, inType, inRarity, inEnergy, inIsUpgraded)
+    {
+        this.Color = inColor;
+        this.Type = inType;
+        this.Rarity = inRarity;
+        this.Energy = inEnergy;
+        this.IsUpgraded = inIsUpgraded; 
+        this.Name = "Card";
+        this.Effect = "Card >Text< @";
+
+        this.ShowEnergy = this.Energy == "" ? true: false;
+        this.IsGlowing = false;
+        if (this.Rarity == Rarity.Rare || this.IsUpgraded)
+        {
+            this.IsGlowing = true;
+        }
+
+        this.ManaColor = this.Color;
+        if (this.Color == Color.Status || this.Color == Color.Curse)
+            this.ManaColor = Color.Colorless;
+        
+        this.UpgradedEnergy = false;
+        this.HasBorder = true;
+    }
+}
