@@ -4,6 +4,7 @@ let CanvasGlow;
 let CanvasArt;
 let CanvasDownload;
 let CanvasDownloadWithBorder
+let CanvasTooltip;
 
 let numOfRows = 1;
 
@@ -45,8 +46,6 @@ let AddArt; //button to add card art (from local files)
 
 let ArtXPosition; //slider to change the art's x position
 let ArtYPosition; //slider to change the art's y position
-//let ArtWidth; //slider to change the art's width
-//let ArtHeight; //slider to change the art's height
 let SliderZoom;
 
 let EnergyInput;
@@ -92,6 +91,7 @@ let ArtZoom = 100;
 let CurrentCardBorder;
 
 let CurrentCard;
+let GlowIsAlreadyMade;
 
 function preload() {
 	//#region Cards
@@ -146,6 +146,8 @@ function setup() {
 	CanvasDownload = createGraphics(350, 455);
 	//Download card with Border, for the Board Game
 	CanvasDownloadWithBorder = createGraphics(380, 510);
+	//Tooltip, why not?
+	CanvasTooltip = createGraphics(900, 650);
 
 	//#region Images Resize
 	ImageResize();
@@ -167,7 +169,7 @@ function setup() {
 
 	//#endregion
 
-	CurrentCard = new Card(Color.Red, Type.Attack, Rarity.Starter, "");
+	CurrentCard = new Card(Color.Red, Type.Attack, Rarity.Starter, "", false);
 
 	CurrentCardBackground = RedAttackBackground;
 	CurrentCardFrame = CommonAttackFrame;
@@ -178,7 +180,7 @@ function setup() {
 	TextArea.attribute("rows", 5);
 	TextArea.attribute("cols", 42);
 	TextArea.position(465, 42);
-	TextArea.input(call);
+	TextArea.input(PreTextUpdate);
 
 	TextArea.elt.value = "Card >Text< @";
 
@@ -213,16 +215,16 @@ function setup() {
 	EnergyInput.position(690 - 612, 38);
 	EnergyInput.attribute("maxlength", 1);
 	EnergyInput.size(12);
-	EnergyInput.input(frameUpdate);
+	EnergyInput.input(FrameUpdate);
 
 	NameInput = createInput("Card");
 	NameInput.position(200, 50);
 	NameInput.attribute("maxlength", 18);
-	NameInput.input(frameUpdate);
+	NameInput.input(FrameUpdate);
 
 	InputType = createInput("Attack");
 	InputType.position(623, 222 + 50 + 30);
-	InputType.changed(frameUpdate);
+	InputType.changed(FrameUpdate);
 
 	/*URLInput = createInput();
 	URLInput.position(520, 522);
@@ -245,7 +247,7 @@ function setup() {
 	ButtonSetup();
 	BoardSetup();
 
-	call();
+	PreTextUpdate();
 
 
 	//noLoop(); //disables draw(); should always be the last line in setup().
@@ -334,7 +336,7 @@ function draw() {
 	stroke(52, 41, 41);
 	strokeWeight(1);
 	text("Text:", 420, 24);
-	if (ButtonToggleUpgradeCard.state)
+	if (CurrentCard.IsUpgraded)
 		{
 			fill(133, 214, 40);
 			text("Name+:", 200, 32)
@@ -357,7 +359,7 @@ function draw() {
 	}
 
 	//rect(20, 80, 390, 530)
-	if (ButtonToggleShowBorder.state)
+	if (CurrentCard.HasBorder)
 	{
 		image(CurrentCardBorder, 0 + 20, 0 + 80);
 		if (CurrentCard.IsGlowing)
@@ -371,16 +373,15 @@ function draw() {
 
 	image(CanvasArt, 65 + 15, 80 + 80);
 	image(CanvasCard, 15 + 18, 20 + 80);
+	image(CanvasTooltip, 0,0)
 }
 
 //#endregion
 
-function frameUpdate() {
+function FrameUpdate() {
 
 	CanvasCard.clear();
 	//cardCanvas.background(0);
-
-
 	noStroke();
 	fill(255);
 
@@ -423,8 +424,6 @@ function frameUpdate() {
 
 	UpdateName();
 	UpdateEnergy();
-
-
 	UpdateText();
 
 	//image(UIExportButtonImage, 690, 500);
@@ -433,12 +432,18 @@ function frameUpdate() {
 }
 
 function UpdateGlow() {
-
+	
+	if (!CurrentCard.IsGlowing)
+		return;
+	
+	print("GLOW");
+	
 	CanvasGlow.clear();
 	CanvasGlow.image(CanvasCard, 15, 20);
 	CanvasGlow.filter(THRESHOLD, 10);
 	CanvasGlow.filter(INVERT);
 	CanvasGlow.filter(BLUR, 8);
+	GlowIsAlreadyMade = true;
 }
 
 function UpdateName() {
@@ -460,7 +465,7 @@ function UpdateName() {
 	textSize(24);
 	noStroke();
 	Name = split(NameInput.value(), "");
-	if (ButtonToggleUpgradeCard.state) {
+	if (CurrentCard.IsUpgraded) {
 		append(Name, "+");
 	}
 	let NameLength = 0;
@@ -483,7 +488,7 @@ function UpdateName() {
 	}
 
 	coeff = 0;
-	if (ButtonToggleUpgradeCard.state) {
+	if (CurrentCard.IsUpgraded) {
 		CanvasCard.fill(133, 214, 40);
 	} else {
 		CanvasCard.fill(252, 248, 234);
@@ -498,15 +503,23 @@ function UpdateName() {
 		CanvasCard.text(Name[d], 179 - NameLength / 2 + coeff,65);
 		coeff = coeff + textWidth(Name[d]) + 2;
 	}
+
+	CurrentCard.Name = NameInput.value();
 }
+
 
 function UpdateEnergy() {
 
 	Energy = EnergyInput.value();
 
+	CurrentCard.Energy = Energy;
+	CurrentCard.ShowEnergy = ButtonToggleEnergy.state;
+	CurrentCard.EnergyUpgraded = ButtonToggleUpgradeEnergy.state;
+
+
 	if (Energy != "") {
-		if (ButtonToggleEnergy.state) {
-			if (ButtonToggleUpgradeEnergy.state) {
+		if (CurrentCard.ShowEnergy) {
+			if (CurrentCard.EnergyUpgraded) {
 				//fill(133,214,40);
 				CanvasCard.fill(133, 214, 40);
 			} else {
@@ -553,7 +566,11 @@ function UpdateEnergy() {
 			CanvasCard.text(Energy, 28 - EnergyX, 50 - EnergyY + 5);
 		}
 	}
-	UpdateGlow();
+
+	if (!GlowIsAlreadyMade)
+	{
+		UpdateGlow();
+	}
 }
 
 function UpdateBorder() {
@@ -591,8 +608,11 @@ function UpdateBorder() {
 		ButtonToggleGlow.state = false;
 	}
 
-	UpdateGlow();
-	frameUpdate();
+	if (!GlowIsAlreadyMade)
+	{
+		UpdateGlow();
+	}
+	FrameUpdate();
 }
 
 function UpdateText() {
@@ -722,9 +742,11 @@ function UpdateText() {
 			}
 		}
 	}
+
+	CurrentCard.Effect = TextArea.elt.value;
 }
 
-function call() {
+function PreTextUpdate() {
 	let allText = split(TextArea.elt.value, "\n");
 	numOfRows = allText.length > 5 ? 5 : allText.length;
 
@@ -765,7 +787,7 @@ function call() {
 		}
 		rows[p].len = textWidth(rows[p].string);
 	}
-	frameUpdate();
+	FrameUpdate();
 
 }
 
@@ -787,7 +809,7 @@ function AddIcon(IconToAdd)
 		TextArea.elt.value += " {" + IconCode[IconToAdd] + "} ";
 	}
 
-	call();
+	PreTextUpdate();
 }
 
 function AddKeyword(KeywordToAdd)
@@ -795,10 +817,11 @@ function AddKeyword(KeywordToAdd)
 	let tmpStr = ">" + KeywordString[KeywordToAdd] + "<";
 
 	TextArea.elt.value += tmpStr;
-	call();
+	PreTextUpdate();
 }
 
 function ButtonDraw() {
+	CanvasTooltip.clear();
 
 	Buttons.forEach(Button => {
 		Button.Draw();
@@ -827,29 +850,30 @@ function ToggleEnergy(NewState){
 function ToggleEnergyUpgrade(newState)
 {
 	UpdateBorder();
-	frameUpdate();	
+	FrameUpdate();	
 }
 
 function ToggleNameUpgrade (newState) {
 
 	CurrentCard.IsUpgraded = newState;
 	UpdateBorder();
-	frameUpdate();
+	FrameUpdate();
 }
 
 function ToggleGlow(newState){
 	CurrentCard.IsGlowing = newState;
-	frameUpdate();
+	FrameUpdate();
 }
 
 function ToggleBoardGameMode(newState)
 {
 	ButtonToggleGlow.visible = newState;
-	frameUpdate();
+	CurrentCard.HasBorder = newState;
+	FrameUpdate();
 }
 
 function ToggleTicked(NewState){
-	frameUpdate();
+	FrameUpdate();
 }
 
 function ChangeColor(ColorToChange) {
@@ -952,9 +976,12 @@ function changeCardFrame() {
 		CurrentCardFrame = CardMap.get(RarityStr + TypeStr + "Frame");
 	}
 
-	
-	frameUpdate();
-	UpdateGlow();
+	if (CurrentCard.IsGlowing && !GlowIsAlreadyMade);
+		UpdateGlow();
+
+	FrameUpdate();
+
+
 }
 
 //#region ImageFunction
@@ -963,7 +990,7 @@ function resetArt() {
 	ImageCenterY();
 	ImageCenterZoom();
 
-	frameUpdate();
+	FrameUpdate();
 }
 
 function ImageCenterX(){
@@ -1038,25 +1065,6 @@ function updateArt(){
 
 }
 
-/*function LoadImageFromURL(){
-	MyURL = URLInput.value();
-	try {
-		url = new URL(MyURL);
-	} catch (_) {
-		print("URL not valid");
-		return false;  
-	}
-
-	if ()
-	
-	print(CardArt);
-	if (CardArt.width == 0 || CardArt.height == 0)
-	{
-		print("Image Not Valid");
-		CardArt = null;
-	}
-}*/
-
 function addArt(file) {
 	if (file.type == "image") {
 		CardArt = loadImage(file.data);
@@ -1085,7 +1093,7 @@ function addArt(file) {
 	} else {
 		CardArt = null;
 	}
-	setTimeout(frameUpdate, 100);
+	setTimeout(FrameUpdate, 100);
 }
 
 function removeArt() {
@@ -1121,11 +1129,11 @@ function DownloadPng() {
 	CanvasDownloadWithBorder.clear();
 	//imagePng = null;
 	let downloadName = NameInput.value();
-	downloadName = downloadName + (ButtonToggleUpgradeCard.state ? " plus" : "");
+	downloadName = downloadName + (CurrentCard.IsUpgraded ? " plus" : "");
 	
 	updateArt();
 
-	if (ButtonToggleShowBorder.state)
+	if (CurrentCard.HasBorder)
 	{
 		CanvasDownloadWithBorder.image(CurrentCardBorder, 0, 0);
 		if (CurrentCard.IsGlowing)
@@ -1178,12 +1186,12 @@ function mousePressed() {
 				infoPressed = false;
 			}
 		}
-		frameUpdate();
+		FrameUpdate();
 	} else {
 		if (questionPressed === true || infoPressed === true) {
 			questionPressed = false;
 			infoPressed = false;
-			frameUpdate();
+			FrameUpdate();
 		}
 	}
 

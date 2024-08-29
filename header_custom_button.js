@@ -60,8 +60,15 @@ class CustomButton {
   }
 }*/
 
+const Direction = {
+	Up : 0,
+	Down: 1,
+	Left: 2,
+	Right: 3
+}
 
 class AButton {
+
 	constructor(x, y, image, onPress,extra, visible, enabled, tooltip)
 	{
 		this.enable = enabled;
@@ -77,6 +84,13 @@ class AButton {
 		this.onPress = onPress;
 		this.visible = visible;
 		this.enabled = enabled;
+
+		this.TimeToShowTooltip = 1000;
+		this.CurrentTimeInside = 0.;
+		this.Tooltip = null;
+
+		this.TooltipXOffset = 0;
+		this.TooltipYOffset = -30;
 	}
 
 	IsMouseInside()
@@ -111,10 +125,16 @@ class AButton {
 		}
 		else if (this.IsMouseInside())
 		{
+			this.CurrentTimeInside += deltaTime;
+			if (this.CurrentTimeInside > this.TimeToShowTooltip && this.Tooltip)
+			{
+				this.ShowTooltip();
+			}
 			this.DrawHover();
 		}
 		else 
 		{
+			this.CurrentTimeInside = 0.;
 			this.DrawEnable();
 		}
 
@@ -124,6 +144,22 @@ class AButton {
 	DrawDisable(){};
 	DrawEnable(){};
 	DrawHover(){};
+
+	ShowTooltip(){
+		if (CanvasTooltip)
+		{
+			CanvasTooltip.fill(255);
+			CanvasTooltip.stroke(0)
+			CanvasTooltip.strokeWeight(2);
+			let StringWidth = CanvasTooltip.textWidth(this.Tooltip) + 10;
+
+			CanvasTooltip.rect(mouseX + this.TooltipXOffset, mouseY + this.TooltipYOffset, StringWidth + 10, 36, 5)
+			CanvasTooltip.fill(0);
+			CanvasTooltip.noStroke();
+			CanvasTooltip.text(this.Tooltip, mouseX + this.TooltipXOffset, mouseY + this.TooltipYOffset + 8)
+			//print(this.Tooltip);
+		}
+	};
 }
 
 class ToggleImageButton extends AButton{

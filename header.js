@@ -47,7 +47,7 @@ const Icon = {
     Slime: 14,
     Flame: 15,
     Common: 16,
-    Upgrade: 17,
+    Upgraded: 17,
     Rare: 18,
     Gold: 19,
 	Last: 20
@@ -71,7 +71,7 @@ const IconString = [
     "Slime",
     "Flame",
     "Common",
-    "Upgrade",
+    "Upgraded",
     "Rare",
     "Gold"
 ]
@@ -115,18 +115,13 @@ class Card {
         this.Name = "Card";
         this.Effect = "Card >Text< @";
 
-        this.ShowEnergy = this.Energy == "" ? true: false;
+        this.ShowEnergy = true;
         this.IsGlowing = false;
-        if (this.Rarity == Rarity.Rare || this.IsUpgraded)
-        {
-            this.IsGlowing = true;
-        }
 
-        this.ManaColor = this.Color;
-        if (this.Color == Color.Status || this.Color == Color.Curse)
-            this.ManaColor = Color.Colorless;
+        this.ManaColor = Color.Colorless;
+
         
-        this.UpgradedEnergy = false;
+        this.EnergyUpgraded = false;
         this.HasBorder = true;
     }
 }
