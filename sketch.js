@@ -26,9 +26,34 @@ let CardHeight;
 class Char {
 	constructor(char, colored) {
 		this.char = char;
-		this.colored = colored; // 0 - normal; 1 - yellow; 2 - green; 8 - Gold Text; 9 - icon
+		this.colored = colored; // 0 - normal; 1 - yellow; 2 - green; 3 - Blue; 4 - Red; 5 - Light Gray; 8 - Gold Text; 9 - icon
 	}
 }
+/*
+if (rows[z].chars[k].colored === 1) {
+	fill(225, 195, 108);
+	CanvasCard.fill(225, 195, 108);
+} else if (rows[z].chars[k].colored === 2) {
+	fill(133, 214, 40);
+	CanvasCard.fill(133, 214, 40);
+} else if (rows[z].chars[k].colored === 3) {
+	fill(40, 160, 214);
+	CanvasCard.fill(40, 160, 214);
+} else if (rows[z].chars[k].colored === 4) {
+	fill(214, 80, 80);
+	CanvasCard.fill(214, 80, 80);
+} else {
+	fill(249, 242, 230);
+	CanvasCard.fill(249, 242, 230);	
+}*/
+const TextColor = [
+	[249, 242, 230],
+	[225, 195, 108],
+	[133, 214, 40],
+	[40, 160, 214],
+	[214, 80, 80],
+	[164, 160, 158]
+]
 
 class Row {
 	constructor() {
@@ -99,7 +124,6 @@ function preload() {
 
 	//#endregion
 
-	HelpImage = loadImage("assets/HelpImage.png");
 
 	fontKreon = loadFont("assets/Kreon.ttf");
 	fontKreonBold = loadFont("assets/Kreon-Bold.ttf");
@@ -135,7 +159,7 @@ function setup() {
 
 	pixelDensity(3.0);
 	//Main Canvas
-	Canvas = createCanvas(900, 650);
+	Canvas = createCanvas(820, 620);
 	//Card 
 	CanvasCard = createGraphics(350, 455);
 	//Image / Art
@@ -147,7 +171,7 @@ function setup() {
 	//Download card with Border, for the Board Game
 	CanvasDownloadWithBorder = createGraphics(380, 510);
 	//Tooltip, why not?
-	CanvasTooltip = createGraphics(900, 650);
+	CanvasTooltip = createGraphics(820, 620);
 
 	//#region Images Resize
 	ImageResize();
@@ -179,6 +203,7 @@ function setup() {
 	TextArea = createElement("textarea");
 	TextArea.attribute("rows", 5);
 	TextArea.attribute("cols", 42);
+	TextArea.style("resize", "none");
 	TextArea.position(465, 42);
 	TextArea.input(PreTextUpdate);
 
@@ -346,8 +371,16 @@ function draw() {
 	
 	fill(133, 214, 40);
 	text("#G#", 480, 24);
+
 	fill(225, 195, 108);
-	text(">Y<", 530, 24);
+	text(">Y<", 540, 24);
+
+	fill(40, 160, 214);
+	text("~B~", 590, 24);
+
+	fill(214, 80, 80);
+	text("^R^", 640, 24);
+
 	noStroke();
 	
 	ImageDraw();
@@ -385,25 +418,6 @@ function FrameUpdate() {
 	noStroke();
 	fill(255);
 
-	/*stroke(0);
-	if (infoPressed === true) {
-		noFill();
-		strokeWeight(4);
-		circle(780, 30, 25);
-
-		line(780, 45, 700, 185);
-		rect(425, 185, 350, 122, 20);
-
-		strokeWeight(1);
-		textSize(24);
-		fill(0);
-		text("Slay the Spire Custom Card Maker", 440, 210);
-
-		textSize(18);
-		text("Disclaimer: This tool is not affiliated with", 440, 260);
-		text("nor endorsed by Slay the Spire and Mega Crit.", 440, 275);
-		text("Card assets are property of Mega Crit.", 440, 290);
-	}*/
 
 	fill(0);
 	noStroke();
@@ -426,9 +440,6 @@ function FrameUpdate() {
 	UpdateEnergy();
 	UpdateText();
 
-	//image(UIExportButtonImage, 690, 500);
-	//image(cardCanvas, 20, 80);
-	//loop();
 }
 
 function UpdateGlow() {
@@ -436,7 +447,7 @@ function UpdateGlow() {
 	if (!CurrentCard.IsGlowing)
 		return;
 	
-	print("GLOW");
+	//print("GLOW");
 	
 	CanvasGlow.clear();
 	CanvasGlow.image(CanvasCard, 15, 20);
@@ -566,11 +577,6 @@ function UpdateEnergy() {
 			CanvasCard.text(Energy, 28 - EnergyX, 50 - EnergyY + 5);
 		}
 	}
-
-	if (!GlowIsAlreadyMade)
-	{
-		UpdateGlow();
-	}
 }
 
 function UpdateBorder() {
@@ -608,10 +614,6 @@ function UpdateBorder() {
 		ButtonToggleGlow.state = false;
 	}
 
-	if (!GlowIsAlreadyMade)
-	{
-		UpdateGlow();
-	}
 	FrameUpdate();
 }
 
@@ -713,16 +715,10 @@ function UpdateText() {
 						183.2 - 4 - rows[z].len / 2 + coeff,
 						349.3 - 13.5 * (numOfRows - 1) + z * 28+2
 					);
-					if (rows[z].chars[k].colored === 1) {
-						fill(225, 195, 108);
-						CanvasCard.fill(225, 195, 108);
-					} else if (rows[z].chars[k].colored === 2) {
-						fill(133, 214, 40);
-						CanvasCard.fill(133, 214, 40);
-					} else {
-						fill(249, 242, 230);
-						CanvasCard.fill(249, 242, 230);
-					}
+
+					cc = TextColor[rows[z].chars[k].colored];
+					fill(cc[0], cc[1], cc[2]);
+					CanvasCard.fill(cc[0], cc[1], cc[2]);
 					//noStroke();
 					CanvasCard.noStroke();
 					//Left I Think
@@ -774,6 +770,24 @@ function PreTextUpdate() {
 				if (colored === 0) {
 					colored = 2;
 				} else if (colored === 2) {
+					colored = 0;
+				}
+			} else if (curr === "~") {
+				if (colored === 0) {
+					colored = 3;
+				} else if (colored === 3) {
+					colored = 0;
+				}
+			} else if (curr === "^") {
+				if (colored === 0) {
+					colored = 4;
+				} else if (colored === 4) {
+					colored = 0;
+				}
+			} else if (curr === "$") {
+				if (colored === 0) {
+					colored = 5;
+				} else if (colored === 5) {
 					colored = 0;
 				}
 			} else {
@@ -853,16 +867,25 @@ function ToggleEnergyUpgrade(newState)
 	FrameUpdate();	
 }
 
-function ToggleNameUpgrade (newState) {
+function ToggleCardUpgrade (newState) {
 
 	CurrentCard.IsUpgraded = newState;
+	
 	UpdateBorder();
 	FrameUpdate();
+	if (newState)
+	{
+		UpdateGlow();	
+	}
 }
 
 function ToggleGlow(newState){
 	CurrentCard.IsGlowing = newState;
 	FrameUpdate();
+	if (newState)
+	{
+		UpdateGlow();	
+	}	
 }
 
 function ToggleBoardGameMode(newState)
@@ -912,8 +935,11 @@ function ChangeColor(ColorToChange) {
 	CurrentCard.Color = ColorToChange;
 	ColorButtons[CurrentCard.Color].enabled = false;
 
+
 	UpdateBorder();
 	changeCardFrame();
+
+	UpdateGlow();
 
 }
 
@@ -923,30 +949,33 @@ function ChangeRarity(RarityToChange) {
 	CurrentCard.Rarity = RarityToChange;
 	RarityButtons[CurrentCard.Rarity].enabled = false;
 
-
 	UpdateBorder();
 	changeCardFrame();
+
+	UpdateGlow();
 }
 
 function ChangeType(TypeToChange) {
-
+	
 	TypeButtons[CurrentCard.Type].enabled = true;
 	CurrentCard.Type = TypeToChange;
 	TypeButtons[CurrentCard.Type].enabled = false;
-
-
+	
+	
 	if (CurrentCard.Color != Color.Status && CurrentCard.Color != Color.Curse)
 		InputType.value(TypeString[CurrentCard.Type]);
 
+	print(CurrentCard.IsGlowing)
+	
 	UpdateBorder();
 	changeCardFrame();
+
+	UpdateGlow();
 }
 //#endregion
 
 
 function changeCardFrame() {
-
-	//noLoop();
 
 	let ColorStr = ColorString[CurrentCard.Color];
 	let RarityStr = RarityString[CurrentCard.Rarity];
@@ -975,13 +1004,7 @@ function changeCardFrame() {
 		);
 		CurrentCardFrame = CardMap.get(RarityStr + TypeStr + "Frame");
 	}
-
-	if (CurrentCard.IsGlowing && !GlowIsAlreadyMade);
-		UpdateGlow();
-
 	FrameUpdate();
-
-
 }
 
 //#region ImageFunction
@@ -1066,6 +1089,7 @@ function updateArt(){
 }
 
 function addArt(file) {
+
 	if (file.type == "image") {
 		CardArt = loadImage(file.data);
 

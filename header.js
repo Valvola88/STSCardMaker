@@ -123,5 +123,10 @@ class Card {
         
         this.EnergyUpgraded = false;
         this.HasBorder = true;
+
+        this.Image = null;
+        this.ImageXOffset = 0;
+        this.ImageYOffset = 0;
+        this.ImageZoom = 100;
     }
 }

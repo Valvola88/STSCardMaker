@@ -152,11 +152,18 @@ class AButton {
 			CanvasTooltip.stroke(0)
 			CanvasTooltip.strokeWeight(2);
 			let StringWidth = CanvasTooltip.textWidth(this.Tooltip) + 10;
+			let RealX = Math.min(CanvasTooltip.width - StringWidth / 2 - 15, Math.max(StringWidth / 2 + 20, mouseX + this.TooltipXOffset));
 
-			CanvasTooltip.rect(mouseX + this.TooltipXOffset, mouseY + this.TooltipYOffset, StringWidth + 10, 36, 5)
+			CanvasTooltip.rect(
+				RealX,
+				mouseY + this.TooltipYOffset,
+				StringWidth + 10,
+				36,
+				5)
 			CanvasTooltip.fill(0);
 			CanvasTooltip.noStroke();
-			CanvasTooltip.text(this.Tooltip, mouseX + this.TooltipXOffset, mouseY + this.TooltipYOffset + 8)
+			CanvasTooltip.text(this.Tooltip,
+				RealX, mouseY + this.TooltipYOffset + 8)
 			//print(this.Tooltip);
 		}
 	};

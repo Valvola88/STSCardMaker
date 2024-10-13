@@ -45,6 +45,9 @@ let UIHideGlow;
 let UIShowBorder;
 let UIHideBorder;
 
+let ButtonIconSize = 32
+let ButtonSize = 48;
+
 function ButtonPreLoad() {
 	UIExportButtonImage = loadImage("ui/Download.png");
 	UIRemoveButtonImage = loadImage("ui/RemoveArt.png");
@@ -94,7 +97,7 @@ function ButtonSetup() {
 	CanvasTooltip.rectMode(CENTER);
 
 	for( i = 0; i < Color.Last; i++){
-		UIColorImage[i].resize(48, 48);
+		UIColorImage[i].resize(ButtonSize, ButtonSize);
 		let Button = new StandardButton(450 + i * 50, 230, UIColorImage[i], ChangeColor, i);
 		Button.Tooltip = ColorString[i];
 		ColorButtons.push(Button);
@@ -102,7 +105,7 @@ function ButtonSetup() {
 	}
 
 	for( i = 0; i < Type.Last; i++){
-		UITypeImage[i].resize(48, 48);
+		UITypeImage[i].resize(ButtonSize, ButtonSize);
 		let Button = new StandardButton(450 + i * 50, 280, UITypeImage[i], ChangeType, i);
 		Button.Tooltip = TypeString[i]
 		TypeButtons.push(Button);
@@ -112,7 +115,7 @@ function ButtonSetup() {
 	}
 
 	for( i = 0; i < Rarity.Last; i++){
-		UIRarityImage[i].resize(48, 48);
+		UIRarityImage[i].resize(ButtonSize, ButtonSize);
 		let Button = new StandardButton(450 + i * 50, 330, UIRarityImage[i], ChangeRarity, i);
 		Button.Tooltip = RarityString[i]
 		Button.TooltipYOffset = +30;
@@ -121,8 +124,8 @@ function ButtonSetup() {
 	}
 	
 	for( i = 0; i < Icon.Last; i++){
-		UIIcon[i].resize(32, 32);
-		let Button = new StandardButton(460 + (i % 10) * 32, 125 + Math.floor(i / 10) * 32, UIIcon[i], AddIcon, i);
+		UIIcon[i].resize(ButtonIconSize, ButtonIconSize);
+		let Button = new StandardButton(460 + (i % 10) * ButtonIconSize, 125 + Math.floor(i / 10) * ButtonIconSize, UIIcon[i], AddIcon, i);
 		Button.Tooltip = IconString[i];
 		if (i < 10)
 		{
@@ -133,8 +136,8 @@ function ButtonSetup() {
 	}
 
 	for( i = 0; i < Keyword.Last; i++){
-		UIKeyword[i].resize(32, 32);
-		let Button = new StandardButton(460 + i * 32, 125 + 64, UIKeyword[i], AddKeyword, i);
+		UIKeyword[i].resize(ButtonIconSize, ButtonIconSize);
+		let Button = new StandardButton(460 + i * ButtonIconSize, 125 + 64, UIKeyword[i], AddKeyword, i);
 		Button.Tooltip = KeywordString[i]
 		KeywordButton.push(Button);
 		Buttons.push(Button);
@@ -144,13 +147,13 @@ function ButtonSetup() {
 	TypeButtons[Type.Attack].enabled = false;
 	RarityButtons[Rarity.Starter].enabled = false; 
 
-	UICheckFalse.resize(48,48);
-	UICheckTrue.resize(48,48);
+	UICheckFalse.resize(ButtonSize,ButtonSize);
+	UICheckTrue.resize(ButtonSize,ButtonSize);
 
 	ButtonToggleEnergy = new ToggleImageButton(8, 16, UICheckTrue, UICheckFalse, ToggleEnergy, true);
 	ButtonToggleEnergy.Tooltip = "Toggle Energy";
 	ButtonToggleEnergy.TooltipYOffset = 50;
-	ButtonToggleEnergy.TooltipXOffset = 70;
+	ButtonToggleEnergy.TooltipXOffset = 0;
 	
 
 	ButtonToggleUpgradeEnergy = new ToggleImageButton(110, 16, UICheckTrue, UICheckFalse, ToggleEnergyUpgrade, false);
@@ -159,7 +162,7 @@ function ButtonSetup() {
 	ButtonToggleUpgradeEnergy.main_tint = [0,255,0];
 	ButtonToggleUpgradeEnergy.hover_tint = [64,192,64];
 	
-	ButtonToggleUpgradeCard = new ToggleImageButton(274, 0, UICheckTrue, UICheckFalse, ToggleNameUpgrade, false);
+	ButtonToggleUpgradeCard = new ToggleImageButton(274, 0, UICheckTrue, UICheckFalse, ToggleCardUpgrade, false);
 	ButtonToggleUpgradeCard.Tooltip = "Upgrade Card"
 	ButtonToggleUpgradeCard.main_tint = [0,255,0];
 	ButtonToggleUpgradeCard.hover_tint = [64,192,64];
@@ -168,17 +171,18 @@ function ButtonSetup() {
 
 
 
-    UIShowBorder.resize(48,48);
-    UIHideBorder.resize(48,48);
-    UIShowGlow.resize(48,48);
-    UIHideGlow.resize(48,48);
+    UIShowBorder.resize(ButtonSize,ButtonSize);
+    UIHideBorder.resize(ButtonSize,ButtonSize);
+    UIShowGlow.resize(ButtonSize,ButtonSize);
+    UIHideGlow.resize(ButtonSize,ButtonSize);
 
 	ButtonToggleGlow = new ToggleImageButton(700, 330, UIHideGlow, UIShowGlow, ToggleGlow, false);
 	ButtonToggleGlow.Tooltip = "Toggle Glow"
 	ButtonToggleGlow.TooltipYOffset = +30;
 	ButtonToggleShowBorder = new ToggleImageButton(750,330,UIHideBorder, UIShowBorder, ToggleBoardGameMode, true);
-	ButtonToggleShowBorder.Tooltip = "Toggle Border Card"
+	ButtonToggleShowBorder.Tooltip = "Toggle Border"
 	ButtonToggleShowBorder.TooltipYOffset = +30;
+	ButtonToggleShowBorder.TooltipXOffset = 0;
 	
 	Buttons.push(ButtonToggleEnergy);
 	Buttons.push(ButtonToggleUpgradeCard);
@@ -191,8 +195,8 @@ function ButtonSetup() {
 	UICenterZoom.resize(40,40);
 
 	UIExportButtonImage.resize(64, 64);
-	UIRemoveButtonImage.resize(48, 48);
-	UIRemoveResetImage.resize(48, 48);
+	UIRemoveButtonImage.resize(ButtonSize, ButtonSize);
+	UIRemoveResetImage.resize(ButtonSize, ButtonSize);
 	
 	ButtonCenterX = new StandardButton(450, 400, UICenterX, ImageCenterX);
 	ButtonCenterX.Tooltip = "Center X"
@@ -209,10 +213,11 @@ function ButtonSetup() {
 	ButtonCenterZoom.TooltipXOffset = -90;
 	ButtonCenterZoom.TooltipYOffset = -10;
 
-	ButtonExport = new StandardButton(760, 435 - 8, UIExportButtonImage, DownloadPng);
+	ButtonExport = new StandardButton(450, 530, UIExportButtonImage, DownloadPng);
 	ButtonExport.Tooltip = "Download Card"
 	ButtonRemove = new StandardButton(705, 435, UIRemoveButtonImage, removeArt);
 	ButtonRemove.Tooltip = "Remove Card Art"
+	ButtonRemove.TooltipYOffset = -20
     //ButtonLoadURL = new StandardButton(450,500,UIRemoveButtonImage, LoadImageFromURL);
 	
 	Buttons.push(ButtonCenterX);
